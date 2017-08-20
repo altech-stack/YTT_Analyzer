@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="b2fe0875-8d79-4827-8abc-44e682082eeb" name="Nagios" url="http://34.213.74.250">
+        <fileTransfer host="34.213.74.250" port="22" privateKey="C:\Users\andylien.tar.gz\Documents\exabeamdemo.pem" rootFolder="/home/ubuntu" accessType="SFTP" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

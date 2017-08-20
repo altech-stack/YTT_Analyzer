@@ -5,8 +5,17 @@ from pymongo import MongoClient
 from flask_cors import CORS, cross_origin
 import json
 import requests
+import speech_recognition as sr
+from urlparse import urlparse
 
 
+def audio_analyzer(filename):
+    print "Analyzing audio.."
+    audio_file = str(filename)
+    r = sr.Recognizer()
+    with sr.AudioFile(audio_file) as source:
+        audio = r.record(source)
+    return r.recognize_sphinx(audio)
 class API():
     @staticmethod
     def find_between(s, first, last):
@@ -68,10 +77,27 @@ class API():
     def yt_analyzer():
         results = {}
         url = request.json['url']
+        yt_id = urlparse(url).query.split('=')[1]
+        key = {
+            '_id': yt_id
+        }
+        mongo = MongoClient()
         try:
             myt = youtube_dl.YoutubeDL(API.get_filename_options)
-            print myt.download([str(url)])
-            results['output'] = "Success!"
+            myt.download([str(url)])
+            yt_col = mongo.yt_db.yt_collection.find_one({'_id': str(yt_id)})
+            if yt_col:
+                if yt_col.get('speech_text'):
+                    results['speech_text'] = yt_col.get('speech_text')
+                else:
+                    yt_col['speech_text'] = audio_analyzer(yt_col.get('filename'))
+            else:
+                yt_col['speech_text'] = audio_analyzer(yt_col.get('filename'))
+                results = mongo.yt_db.yt_collection.update(key, yt_col, upsert=True)
+
+
+
+
         except Exception as ex:
             print ex
             results['output'] = "Failure"
