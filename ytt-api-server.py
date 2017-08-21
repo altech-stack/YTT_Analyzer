@@ -5,17 +5,17 @@ from pymongo import MongoClient
 from flask_cors import CORS, cross_origin
 import json
 import requests
-import speech_recognition as sr
 from urlparse import urlparse
+import sys
+from rq import Queue
+from rq.job import Job
+from worker import conn,analyze_yt_video
+import os
 
 
-def audio_analyzer(filename):
-    print "Analyzing audio.."
-    audio_file = str(filename)
-    r = sr.Recognizer()
-    with sr.AudioFile(audio_file) as source:
-        audio = r.record(source)
-    return r.recognize_sphinx(audio)
+
+
+
 class API():
     @staticmethod
     def find_between(s, first, last):
@@ -27,41 +27,14 @@ class API():
             return ""
 
 
-    def text_extractor(d):
-        mongo = MongoClient()
-        if d['status'] == 'finished':
-            id = API.find_between(d['filename'],'./tmp/','.webm')
-            key = {
-                '_id':id
-            }
-            data = d
-            data['filename'] = data['filename'].replace('.webm','.wav')
-            result = mongo.yt_db['yt_collection'].update(
-                key,
-                data, upsert=True)
-            print result
-
     tmp_folder = "./tmp/"
-    get_filename_options = {
-        'format':'bestaudio/best',
-        'extractaudio': True,
-        'audioformat' : 'wav',
-        'noplaylist': True,
-        'quiet': True,
-        'outtmpl':tmp_folder+'%(id)s.%(ext)s',
-        'postprocessors': [
-            {
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'wav',
-                'preferredquality': '192',
-            } 
-        ],
-        'no-warnings':True,
-        'progress_hooks':[text_extractor]
-    }
     app = Flask('ytt-api-server')
+
     cors = CORS(app)
     app.config['CORS_HEADERS'] = 'Content-Type'
+
+    q = Queue(connection=conn)
+
     mongo_config = {
         'host': 'localhost',
         'port': 27017
@@ -77,32 +50,23 @@ class API():
     def yt_analyzer():
         results = {}
         url = request.json['url']
-        yt_id = urlparse(url).query.split('=')[1]
-        key = {
-            '_id': yt_id
-        }
-        mongo = MongoClient()
-        try:
-            myt = youtube_dl.YoutubeDL(API.get_filename_options)
-            myt.download([str(url)])
-            yt_col = mongo.yt_db.yt_collection.find_one({'_id': str(yt_id)})
-            if yt_col:
-                if yt_col.get('speech_text'):
-                    results['speech_text'] = yt_col.get('speech_text')
-                else:
-                    yt_col['speech_text'] = audio_analyzer(yt_col.get('filename'))
-            else:
-                yt_col['speech_text'] = audio_analyzer(yt_col.get('filename'))
-                results = mongo.yt_db.yt_collection.update(key, yt_col, upsert=True)
-
-
-
-
-        except Exception as ex:
-            print ex
-            results['output'] = "Failure"
-
+        job = API.q.enqueue_call(
+            func=analyze_yt_video, args=[url],result_ttl=5000
+        )
+        results['job_id'] = job.get_id()
         return jsonify({'result': results})
+
+    @staticmethod
+    @app.route('/api/v1.0/yt/<job_key>', methods=['GET'])
+    def get_results(job_key):
+        results = {}
+
+        job = Job.fetch(job_key,connection=conn)
+        if job.is_finished:
+            return str(job.result),200
+        else:
+            return 'Nay',202
+
 
 
     @staticmethod
