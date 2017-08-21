@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os
 import redis
 from rq import Worker, Queue, Connection
@@ -45,6 +46,7 @@ get_filename_options = {
         'noplaylist': True,
         'quiet': True,
         'outtmpl':tmp_folder+'%(id)s.%(ext)s',
+        'write-auto-sub':True,
         'postprocessors': [
             {
                 'key': 'FFmpegExtractAudio',
@@ -94,8 +96,18 @@ def analyze_yt_video(url):
             print "No entry exists, analyzing audio"
             yt_col['speech_text'] = audio_analyzer(yt_col.get('filename'))
             print "Getting metadata.."
-            yt_col['metadata'] = myt.extract_info(url,download=False)
-
+            metadata = myt.extract_info(url,download=False)
+            yt_col['upload_date'] = metadata.get('upload_date')
+            yt_col['duration'] = metadata.get('duration')
+            yt_col['title'] = metadata.get('title')
+            yt_col['uploader_url'] = metadata.get('uploader_url')
+            yt_col['categories'] = metadata.get('categories')
+            yt_col['description'] = metadata.get('description')
+            yt_col['uploader'] = metadata.get('uploader')
+            yt_col['thumbnails'] = metadata.get('thumbnails')
+            yt_col['thumbnail'] = metadata.get('thumbnail')
+            yt_col['webpage_url'] = metadata.get('webpage_url')
+            yt_col['subtitles'] = metadata.get('subtitles')
             mongo.yt_db.yt_collection.update(key, yt_col, upsert=True)
 
 
