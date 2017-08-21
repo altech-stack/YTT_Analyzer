@@ -33,7 +33,7 @@ class API():
     cors = CORS(app)
     app.config['CORS_HEADERS'] = 'Content-Type'
 
-    q = Queue(connection=conn)
+
 
     mongo_config = {
         'host': 'localhost',
@@ -50,8 +50,9 @@ class API():
     def yt_analyzer():
         results = {}
         url = request.json['url']
-        job = API.q.enqueue_call(
-            func=analyze_yt_video, args=[url],result_ttl=5000
+        q = Queue(connection=conn)
+        job = q.enqueue_call(
+            func=analyze_yt_video, args=[url],result_ttl=5000,timeout=3600
         )
         results['job_id'] = job.get_id()
         return jsonify({'result': results})

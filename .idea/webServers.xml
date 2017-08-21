@@ -10,6 +10,14 @@
           <option name="port" value="22" />
         </fileTransfer>
       </webServer>
+      <webServer id="91a35ba8-b8cd-41ff-81b3-3a3dbed23830" name="YT_AA" url="http://52.32.17.205">
+        <fileTransfer host="52.32.17.205" port="22" privateKey="C:\Users\andylien.tar.gz\Documents\YT_AA.pem" rootFolder="/home/ubuntu" accessType="SFTP" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

@@ -26,12 +26,13 @@ def find_between(s, first, last):
 def text_extractor(d):
     mongo = MongoClient()
     if d['status'] == 'finished':
-        id = find_between(d['filename'], './tmp/', '.webm')
+        id = find_between(d['filename'], './tmp/', '.')
         key = {
             '_id': id
         }
         data = d
-        data['filename'] = data['filename'].replace('.webm', '.wav')
+        print d
+        data['filename'] = data['filename'].replace('.webm', '.wav').replace('.m4a','.wav')
         result = mongo.yt_db['yt_collection'].update(
             key,
             data, upsert=True)
@@ -86,12 +87,17 @@ def analyze_yt_video(url):
 
         else:
             print "Extracting Audio.."
+
             myt = youtube_dl.YoutubeDL(get_filename_options)
             myt.download([str(url)])
             yt_col = mongo.yt_db.yt_collection.find_one({'_id': str(yt_id)})
             print "No entry exists, analyzing audio"
             yt_col['speech_text'] = audio_analyzer(yt_col.get('filename'))
+            print "Getting metadata.."
+            yt_col['metadata'] = myt.extract_info(url,download=False)
+
             mongo.yt_db.yt_collection.update(key, yt_col, upsert=True)
+
 
         return yt_col.get('speech_text')
 

@@ -36,14 +36,13 @@ def test_getter(j_id):
     return response.content
 
 def main():
-    job_id = test_yt_api(str('https://www.youtube.com/watch?v=L5uNIbtAKxc'))
+    job_id = test_yt_api(str('https://www.youtube.com/watch?v=StAJ2_KoFdo'))
     print job_id['result']['job_id']
     j_id = job_id['result']['job_id']
-    wait_time = 10
+    wait_time = 1000
     while (wait_time > 0):
         if test_getter(j_id) == 'Nay':
             print "Waiting for response to come back.." + str(wait_time) + ' tries left..'
-            print test_getter(j_id)
             wait_time = wait_time - 1
             time.sleep(2)
         else:

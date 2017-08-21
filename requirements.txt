@@ -1,7 +1,11 @@
 certifi==2017.7.27.1
 chardet==3.0.4
+gyp==0.1
 idna==2.6
 pycrypto==2.6.1
+redis==2.10.6
 requests==2.18.4
+SpeechRecognition==3.7.1
 urllib3==1.22
 virtualenv==15.1.0
+youtube-dl==2017.8.18
